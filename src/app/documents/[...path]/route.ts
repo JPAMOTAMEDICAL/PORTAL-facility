@@ -17,18 +17,16 @@ async function proxyDocumentRequest(
   { params }: RouteContext,
 ) {
   const { path = [] } = await params;
-  const targetUrl = new URL(`documents/${path.join("/")}`, `${API_BASE_URL}/`);
-  targetUrl.search = request.nextUrl.search;
-
   const method = request.method.toUpperCase();
   const headers = buildUpstreamHeaders(request);
 
-  const body =
-    method === "GET" || method === "HEAD"
-      ? undefined
-      : Buffer.from(await request.arrayBuffer());
-
   try {
+    const targetUrl = new URL(`documents/${path.join("/")}`, `${API_BASE_URL}/`);
+    targetUrl.search = request.nextUrl.search;
+    const body =
+      method === "GET" || method === "HEAD"
+        ? undefined
+        : Buffer.from(await request.arrayBuffer());
     const upstream = await fetch(targetUrl, {
       method,
       headers,
