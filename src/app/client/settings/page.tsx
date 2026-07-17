@@ -42,6 +42,7 @@ export default function ClientSettingsPage() {
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
+    confirmPassword: "",
   });
   const [profileForm, setProfileForm] = useState({
     fullName: "",
@@ -258,6 +259,12 @@ export default function ClientSettingsPage() {
       return;
     }
 
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setLocalError("New password and confirmation password must match.");
+      setMessage(null);
+      return;
+    }
+
     setBusy(true);
     setLocalError(null);
     setMessage(null);
@@ -272,7 +279,11 @@ export default function ClientSettingsPage() {
         session.accessToken,
       );
       setMessage(response.message);
-      setPasswordForm({ currentPassword: "", newPassword: "" });
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } catch (requestError) {
       setLocalError(
         requestError instanceof Error ? requestError.message : "Password update failed.",
@@ -506,9 +517,25 @@ export default function ClientSettingsPage() {
               value={passwordForm.newPassword}
             />
           </label>
+          <label className="block">
+            <span className="mb-2 block text-sm text-[var(--foreground)]">Confirm new password</span>
+            <input
+              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--ring)]"
+              onChange={(event) =>
+                setPasswordForm((current) => ({ ...current, confirmPassword: event.target.value }))
+              }
+              type="password"
+              value={passwordForm.confirmPassword}
+            />
+          </label>
           <button
             className="rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-medium text-white transition hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={busy || !passwordForm.currentPassword || !passwordForm.newPassword}
+            disabled={
+              busy ||
+              !passwordForm.currentPassword ||
+              !passwordForm.newPassword ||
+              !passwordForm.confirmPassword
+            }
             type="submit"
           >
             {busy ? "Updating..." : "Change password"}
