@@ -31,6 +31,7 @@ import {
   loadBranding,
   loadSession,
   loadThemeMode,
+  saveSession,
   saveBranding,
   saveThemeMode,
   type BrandingConfig,
@@ -311,6 +312,17 @@ export default function DashboardPage() {
         },
         session.accessToken,
       );
+      if (session.user.status === "PASSWORD_CHANGE_REQUIRED") {
+        saveSession({
+          ...session,
+          user: {
+            ...session.user,
+            status: "ACTIVE",
+          },
+        });
+        window.location.reload();
+        return;
+      }
       setMessage(response.message);
     } catch (passwordError) {
       setError(
@@ -373,12 +385,68 @@ export default function DashboardPage() {
     (sum, collection) => sum + Number(collection.weightKg),
     0,
   );
+  const requiresPasswordChange =
+    session?.user.status === "PASSWORD_CHANGE_REQUIRED";
 
   if (!session) {
     return (
       <main className="flex min-h-screen items-center justify-center px-6">
         <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] px-6 py-5 text-sm text-[var(--muted)] shadow-[var(--shadow-soft)]">
           Loading client workspace...
+        </div>
+      </main>
+    );
+  }
+
+  if (requiresPasswordChange) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-transparent px-6 py-10">
+        <div className="w-full max-w-xl rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-8 shadow-[var(--shadow-soft)]">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Password change is required before you can continue. Use the temporary password from the onboarding email as your current password.
+          </div>
+          {message ? (
+            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              {message}
+            </div>
+          ) : null}
+          {error ? (
+            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {error}
+            </div>
+          ) : null}
+          <div className="mt-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">First Login Security</p>
+            <h1 className="mt-2 text-3xl font-semibold text-[var(--foreground)]">Change your password</h1>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              This account is using a temporary onboarding password. Create a new password now to unlock the facility workspace.
+            </p>
+          </div>
+          <form className="mt-6 space-y-4" onSubmit={handleChangePassword}>
+            <Field
+              label="Current password"
+              type="password"
+              value={passwordForm.currentPassword}
+              onChange={(value) =>
+                setPasswordForm((current) => ({ ...current, currentPassword: value }))
+              }
+            />
+            <Field
+              label="New password"
+              type="password"
+              value={passwordForm.newPassword}
+              onChange={(value) =>
+                setPasswordForm((current) => ({ ...current, newPassword: value }))
+              }
+            />
+            <button
+              className="rounded-2xl bg-sky-400 px-4 py-3 text-sm font-medium text-slate-950 transition hover:bg-sky-300 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={busy}
+              type="submit"
+            >
+              {busy ? "Updating..." : "Update Password"}
+            </button>
+          </form>
         </div>
       </main>
     );
